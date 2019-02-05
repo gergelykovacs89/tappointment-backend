@@ -15,5 +15,24 @@ router.post('/register', async (req, res) => {
     }
 });
 
+router.post('/login', async (req, res) => {
+    try {
+        const body = _.pick(req.body, ['email', 'password']);
+        let user = await db.user.findByCredentials(body.email, body.password);
+        const userToken = user.generateAuthToken();
+        user = _.pick(user.dataValues, ['email', 'id']);
+        res.header('x-auth', userToken).status(200).send({
+            status: 'OK',
+            message: 'logged in',
+            user: user,
+            userToken: userToken
+        });
+    } catch (e) {
+        res.status(400).send({
+            status: 'WRONG_PASSWORD'
+        });
+    }
+});
+
 
 module.exports = router;

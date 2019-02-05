@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 module.exports = (sequelize, DataTypes) => {
 
@@ -17,6 +18,33 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING
         }
     });
+
+    User.findByCredentials = function (email, password) {
+        return User.findOne({where: {email: email}})
+            .then((user) => {
+                if (!user) {
+                    return Promise.reject();
+                }
+                return new Promise((resolve, reject) => {
+                    bcrypt.compare(password, user.password, (err, res) => {
+                        if (!res) {
+                            reject();
+                        } else {
+                            resolve(user);
+                        }
+                    });
+                });
+            });
+    };
+
+    User.prototype.generateAuthToken = function () {
+        let user = this;
+        const access = 'auth';
+        return jwt.sign({
+            id: user.id,
+            access: access
+        }, process.env.JWT_SECRET).toString();
+    };
 
     User.associate = (models) => {
         User.hasMany(models.order);
