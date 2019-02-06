@@ -42,8 +42,22 @@ module.exports = (sequelize, DataTypes) => {
         const access = 'auth';
         return jwt.sign({
             id: user.id,
+            email: user.email,
             access: access
         }, process.env.JWT_SECRET).toString();
+    };
+
+    User.findByToken = function (token) {
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (e) {
+            return Promise.reject();
+        }
+        return User.findOne({where: {
+            id: decoded.id,
+            email: decoded.email
+        }});
     };
 
     User.associate = (models) => {
