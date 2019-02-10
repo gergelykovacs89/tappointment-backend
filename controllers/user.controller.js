@@ -4,7 +4,7 @@ const db = require('../models/index');
 exports.registerUser = async function (req, res) {
     try {
         const body = _.pick(req.body, ['email', 'password']);
-        await db.user.create({email: body.email, password: body.password});
+        await db.user.registerUser(body);
         res.send({
             message: 'Registration was successful.',
             status: 'OK'
@@ -17,23 +17,18 @@ exports.registerUser = async function (req, res) {
 exports.loginUser = async function (req, res) {
     try {
         const body = _.pick(req.body, ['email', 'password']);
-        let user = await db.user.findByCredentials(body.email, body.password);
+        let user = await db.user.findByCredentials(body);
         const userToken = user.generateAuthToken();
-        const order = await db.order.findOrCreate({where: {userId: user.id, active: true}, defaults: {userId: user.id}});
-        const orderId = order[0].dataValues.id;
-        let orderDetail = await db.menuitem_order.findAll({where: {orderId: orderId}, raw: true});
-        orderDetail = orderDetail.map(orderItem =>_.pick(orderItem, ['menuitemId', 'numberOf']));
-        user = _.pick(user.dataValues, ['email', 'id']);
+        const userDetails = await getUserDetails(user);
         res.status(200).send({
             status: 'OK',
             message: 'logged in',
             user: user,
             userToken: userToken,
-            orderId: orderId,
-            orderDetail: orderDetail
+            orderId: userDetails.orderId,
+            orderDetail: userDetails.orderDetail
         });
     } catch (e) {
-        console.log(e);
         res.status(400).send({
             status: 'WRONG_PASSWORD'
         });
@@ -44,22 +39,28 @@ exports.getUser = async function (req, res) {
     try {
         let user = req.user;
         let token = req.token;
-        const lastActiveOrder = await db.order.find({where: {userId: user.id, active: true}});
-        let orderDetail = await db.menuitem_order.findAll({where: {orderId: lastActiveOrder.dataValues.id}, raw: true});
-        orderDetail = orderDetail.map(orderItem =>_.pick(orderItem, ['menuitemId', 'numberOf']));
-        user = _.pick(user.dataValues, ['email', 'id']);
+        const userDetails = await getUserDetails(user);
         res.status(200).send({
             status: 'OK',
             message: 'logged in',
             user: user,
             userToken: token,
-            orderId: lastActiveOrder.dataValues.id,
-            orderDetail: orderDetail
+            orderId: userDetails.orderId,
+            orderDetail: userDetails.orderDetail
         });
     } catch (e) {
         res.status(400).send({
             status: 'Token expired'
         });
     }
+};
+
+getUserDetails = async function (user) {
+    const order = await db.order.getCurrentOrder(user);
+    const orderId = order[0].dataValues.id;
+    let orderDetail = await db.order_item.getAllItems(orderId);
+    orderDetail = orderDetail.map(orderItem =>_.pick(orderItem, ['menuitemId', 'numberOf']));
+    user = _.pick(user.dataValues, ['email', 'id']);
+    return {user, orderDetail, orderId};
 };
 
