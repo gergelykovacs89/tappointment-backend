@@ -38,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
 
     MenuItem.associate = (models) => {
         MenuItem.belongsToMany(models.order,
-            {through: models.menuitem_order, foreignKey: 'menuitemId',
+            {through: models.order_item, foreignKey: 'menuitemId',
                 as: 'OrderItem', onDelete: 'RESTRICT', onUpdate: 'RESTRICT'})
     };
 

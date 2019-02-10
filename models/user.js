@@ -19,14 +19,18 @@ module.exports = (sequelize, DataTypes) => {
         }
     });
 
-    User.findByCredentials = function (email, password) {
-        return User.findOne({where: {email: email}})
+    User.associate = (models) => {
+        User.hasMany(models.order);
+    };
+
+    User.findByCredentials = function (body) {
+        return User.findOne({where: {email: body.email}})
             .then((user) => {
                 if (!user) {
                     return Promise.reject();
                 }
                 return new Promise((resolve, reject) => {
-                    bcrypt.compare(password, user.password, (err, res) => {
+                    bcrypt.compare(body.password, user.password, (err, res) => {
                         if (!res) {
                             reject();
                         } else {
@@ -60,8 +64,8 @@ module.exports = (sequelize, DataTypes) => {
         }});
     };
 
-    User.associate = (models) => {
-        User.hasMany(models.order);
+    User.registerUser = function (body) {
+        return User.create({email: body.email, password: body.password});
     };
 
     User.beforeCreate((user, options) => {
