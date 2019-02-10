@@ -23,14 +23,16 @@ router.post('/login', async (req, res) => {
         const userToken = user.generateAuthToken();
         const order = await db.order.findOrCreate({where: {userId: user.id, active: true}, defaults: {userId: user.id}});
         const orderId = order[0].dataValues.id;
+        let orderDetail = await db.menuitem_order.findAll({where: {orderId: orderId}, raw: true});
+        orderDetail = orderDetail.map(orderItem =>_.pick(orderItem, ['menuitemId', 'numberOf']));
         user = _.pick(user.dataValues, ['email', 'id']);
-
         res.status(200).send({
             status: 'OK',
             message: 'logged in',
             user: user,
             userToken: userToken,
-            orderId: orderId
+            orderId: orderId,
+            orderDetail: orderDetail
         });
     } catch (e) {
         console.log(e);
@@ -46,13 +48,16 @@ router.get('/get-user', authenticate, async (req, res) => {
         let user = req.user;
         let token = req.token;
         const lastActiveOrder = await db.order.find({where: {userId: user.id, active: true}});
+        let orderDetail = await db.menuitem_order.findAll({where: {orderId: lastActiveOrder.dataValues.id}, raw: true});
+        orderDetail = orderDetail.map(orderItem =>_.pick(orderItem, ['menuitemId', 'numberOf']));
         user = _.pick(user.dataValues, ['email', 'id']);
         res.status(200).send({
             status: 'OK',
             message: 'logged in',
             user: user,
             userToken: token,
-            orderId: lastActiveOrder.dataValues.id
+            orderId: lastActiveOrder.dataValues.id,
+            orderDetail: orderDetail
         });
     } catch (e) {
         res.status(400).send({
