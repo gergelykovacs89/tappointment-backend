@@ -1,18 +1,8 @@
 const router = require('express').Router();
-const db = require('../../models/index');
+const MenuItemController = require('../../controllers/menuitem.controller');
 
-
-router.get('/get-menu-items', async (req, res) => {
-    try {
-        const menuitems = await db.menuitem.getAllMenuItems();
-        res.status(200).send({
-            menuitems: menuitems
-        });
-    } catch (e) {
-        res.status(400).send({
-            status: 'Something went wrong'
-        });
-    }
+router.get('/get-menu-items', (req, res) => {
+    MenuItemController.getMenuItems(req, res);
 });
 
 module.exports = router;
