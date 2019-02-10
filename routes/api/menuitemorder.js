@@ -7,6 +7,20 @@ const {authenticate} = require('../../middleware/authenticate');
 router.put('/add-to-order', authenticate, async (req, res) => {
     try {
         const body = _.pick(req.body, ['menuitemId', 'amount', 'orderId']);
+        let orderSum = 0;
+        const MENU = await db.menuitem.findAll();
+        const menuItems = await db.menuitem_order.findAll({where: {orderId: body.orderId}});
+        menuItems.forEach((menuItem) => {
+            let itemPrice = MENU.find(item => item.dataValues.id === menuItem.menuitemId).dataValues.Price;
+            orderSum += menuItem.numberOf * itemPrice;
+        });
+        let currentItemPrice = MENU.find(item => item.dataValues.id === body.menuitemId).dataValues.Price;
+        if (orderSum + currentItemPrice === 10000) {
+            throw new Error('10000 bug activated');
+        }
+        if (orderSum + currentItemPrice >= +process.env.ORDER_UPPER_BOUND) {
+            return res.status(400).send({ error: `A rendelés felső határa: ${+process.env.ORDER_UPPER_BOUND} Ft`});
+        }
         let cartItem = await db.menuitem_order.findOrCreate({
             where:
                     {
@@ -31,7 +45,7 @@ router.put('/add-to-order', authenticate, async (req, res) => {
             cartItem: cartItem
         });
     } catch (err) {
-        res.status(400).send(err);
+        res.status(500).send(err);
     }
 });
 
