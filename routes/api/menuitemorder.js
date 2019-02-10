@@ -40,7 +40,7 @@ router.put('/remove-from-order', authenticate, async (req, res) => {
         const body = _.pick(req.body, ['menuitemId', 'orderId']);
         await db.menuitem_order.decrement('numberOf', {where: {orderId: body.orderId, menuitemId: body.menuitemId}});
         const updatedItem = await db.menuitem_order.find({where: {orderId: body.orderId, menuitemId: body.menuitemId}});
-        if (updatedItem.numberOf >= 0) {
+        if (updatedItem.numberOf > 0) {
             res.send({
                 status: 'REMOVED',
                 cartItem: updatedItem

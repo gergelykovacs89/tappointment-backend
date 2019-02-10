@@ -13,6 +13,15 @@ module.exports = (sequelize, DataTypes) => {
         active: {
             type: DataTypes.BOOLEAN,
             defaultValue: true
+        },
+        fullName: {
+            type: DataTypes.STRING
+        },
+        address: {
+            type: DataTypes.STRING
+        },
+        phoneNum: {
+            type: DataTypes.STRING
         }
     });
 
